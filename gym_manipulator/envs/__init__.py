@@ -1,0 +1,1 @@
+from gym_manipulator.envs.manipulator_env import ManipulatorEnv
