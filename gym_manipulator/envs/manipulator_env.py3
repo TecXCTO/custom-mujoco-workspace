@@ -1,0 +1,136 @@
+import os
+import gymnasium as gym
+from gymnasium import spaces
+import mujoco
+import numpy as np
+
+class ManipulatorEnv(gym.Env):
+    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 50}
+
+    def __init__(self, render_mode=None):
+        super().__init__()
+        
+        # Load the updated MJCF Model
+        xml_path = os.path.join(os.path.dirname(__file__), '../../assets/manipulator/arm_scene.xml')
+        self.model = mujoco.MjModel.from_xml_path(xml_path)
+        self.data = mujoco.MjData(self.model)
+
+        self.render_mode = render_mode
+        self.viewer = None
+        
+        # Vision resolution configuration
+        self.cam_width = 64
+        self.cam_height = 64
+        self.renderer = mujoco.Renderer(self.model, height=self.cam_height, width=self.cam_width)
+
+        # Action space: 2 Continuous motor torques inside range [-1, 1]
+        self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(2,), dtype=np.float32)
+
+        # Observation space dimension calculation (10 state features + 12288 flat pixel channels)
+        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(12298,), dtype=np.float32)
+
+    def _get_obs(self):
+        # 1. Gather state features
+        qpos = self.data.qpos.copy()
+        qvel = self.data.qvel.copy()
+        ee_pos = self.data.site('ee_site').xpos.copy()
+        target_pos = self.data.body('target').xpos.copy()
+        state_features = np.concatenate([qpos, qvel, target_pos, ee_pos], dtype=np.float32)
+        
+        # 2. Capture and extract visual observations from the camera asset channel
+        self.renderer.update_scene(self.data, camera="main_cam")
+        rgb_pixels = self.renderer.render()
+        flat_pixels = (rgb_pixels.flatten() / 255.0).astype(np.float32)
+        
+        return np.concatenate([state_features, flat_pixels], dtype=np.float32)
+
+    def _check_obstacle_collision(self):
+        # Parse active contact pairs in the simulation matrix
+        for i in range(self.data.ncon):
+            contact = self.data.contact[i]
+            geom1_name = mujoco.mj_id2name(self.model, mujoco.mjtObj.mjOBJ_GEOM, contact.geom1)
+            geom2_name = mujoco.mj_id2name(self.model, mujoco.mjtObj.mjOBJ_GEOM, contact.geom2)
+            
+            # Check for collisions involving the obstacle
+            if (geom1_name == "obs_geom" or geom2_name == "obs_geom"):
+                if geom1_name != "floor" and geom2_name != "floor":
+                    return True
+        return False
+
+    def reset(self, seed=None, options=None):
+        super().reset(seed=seed)
+        
+        # Reset physics variables back to baseline layout
+        mujoco.mj_resetData(self.model, self.data)
+
+        # Randomize target position smoothly at every new episode start
+        target_id = self.model.body('target').id
+        self.model.body_pos[target_id] = np.array([
+            self.np_random.uniform(0.35, 0.55),
+            0.0,
+            self.np_random.uniform(0.2, 0.6)
+        ])
+
+        # Randomize initial robot joint positions slightly to prevent overfitting
+        self.data.qpos = self.np_random.uniform(-0.3, 0.3)
+        self.data.qpos = self.np_random.uniform(-0.3, 0.3)
+        mujoco.mj_forward(self.model, self.data)
+
+        if self.render_mode == "human":
+            self.render()
+
+        return self._get_obs(), {}
+
+    def step(self, action):
+        # 1. Inject agent actions into motor controls
+        self.data.ctrl[:] = action
+        
+        # 2. Advance physics simulation frames
+        for _ in range(10):
+            mujoco.mj_step(self.model, self.data)
+
+        obs = self._get_obs()
+
+        # 3. Calculate primary distance reward tracking
+        ee_pos = self.data.site('ee_site').xpos
+        target_pos = self.data.body('target').xpos
+        distance_to_target = np.linalg.norm(ee_pos - target_pos)
+        
+        reward = -distance_to_target
+        reward -= 0.05 * np.sum(np.square(action))  # Smooth tracking penalty
+
+        # 4. Proactive Obstacle Avoidance Shaping (Potential-field style penalty)
+        obstacle_pos = self.data.body('obstacle').xpos
+        distance_to_obstacle = np.linalg.norm(ee_pos - obstacle_pos)
+        
+        # If the arm gets dangerously close (within 15cm), scale up the penalty exponentially
+        if distance_to_obstacle < 0.15:
+            reward -= 0.02 / (distance_to_obstacle + 0.001)
+
+        # 5. Handle Critical Collision Constraints
+        terminated = False
+        if self._check_obstacle_collision():
+            reward -= 50.0       # Large negative penalty for crashing
+            terminated = True   # Fail immediately and stop the training episode early
+
+        # 6. Define truncation parameters
+        truncated = self.data.time > 4.0  # Cap every training episode at 4 simulated seconds
+
+        if self.render_mode == "human":
+            self.render()
+
+        return obs, reward, terminated, truncated, {}
+
+    def render(self):
+        if self.render_mode == "human" and self.viewer is None:
+            import mujoco.viewer
+            self.viewer = mujoco.viewer.launch_passive(self.model, self.data)
+        
+        if self.viewer is not None:
+            self.viewer.sync()
+
+    def close(self):
+        if self.viewer is not None:
+            self.viewer.close()
+            self.viewer = None
+      
