@@ -1,0 +1,36 @@
+<mujoco model="inverted_pendulum">
+    <compiler coordinate="local" inertiafromgeom="true"/>
+    <option timestep="0.002" gravity="0 0 -9.81"/>
+
+    <!-- Scene visual styles and textures -->
+    <asset>
+        <texture name="grid" type="2d" builtin="checker" rgb1=".1 .2 .3" rgb2=".2 .3 .4" width="512" height="512"/>
+        <material name="grid_mat" texture="grid" texrepeat="1 1"/>
+    </asset>
+
+    <worldbody>
+        <!-- Static Ground Floor -->
+        <geom name="floor" type="plane" size="0 0 .25" material="grid_mat"/>
+        <light directional="false" diffuse=".8 .8 .8" specular="0.3 0.3 0.3" pos="0 0 4" dir="0 0 -1"/>
+
+        <!-- The Pendulum Base Anchor -->
+        <body name="base" pos="0 0 1.0">
+            <geom name="base_geom" type="sphere" size="0.05" rgba="0 0 1 1"/>
+            
+            <!-- Rotating Arm Segment -->
+            <body name="arm" pos="0 0 0">
+                <joint name="pin_joint" type="hinge" axis="0 1 0" pos="0 0 0"/>
+                <geom name="arm_cylinder" type="cylinder" fromto="0 0 0 0 0 -0.5" size="0.02" rgba="1 0 0 1"/>
+                <!-- End Effector Mass -->
+                <body name="tip" pos="0 0 -0.5">
+                    <geom name="tip_bob" type="sphere" size="0.04" rgba="0 1 0 1"/>
+                </body>
+            </body>
+        </body>
+    </worldbody>
+
+    <!-- Motor input channel to manipulate the joint directly -->
+    <actuator>
+        <motor name="torque_motor" joint="pin_joint" gear="1.0" ctrlrange="-10 10"/>
+    </actuator>
+</mujoco>
