@@ -1,3 +1,4 @@
+# Execute these steps in your terminal to install your package locally, start training your RL model, and back up the entire pipeline to GitHub.
 # 1. Install your project locally in editable developer mode
 pip install -e .
 
