@@ -1,0 +1,49 @@
+import gymnasium as gym
+from stable_baselines3 import PPO
+import gym_manipulator
+
+def main():
+    print("Initializing Custom MuJoCo Arm Environment via Gymnasium...")
+    env = gym.make("GymManipulator-v0")
+
+    print("Building Vision-Optimized Hyperparameter PPO Actor-Critic Network...")
+    # These optimized hyperparameters help prevent gradient collapse when processing pixel inputs
+    model = PPO(
+        "MlpPolicy", 
+        env, 
+        verbose=1, 
+        learning_rate=2.5e-4,       # Adjusted learning rate for stable vision feature mapping
+        n_steps=4096,               # Larger rollout buffer to gather diverse movement sequences
+        batch_size=128,             # Expanded batch layout to handle 12,298 size inputs efficiently
+        n_epochs=10,                # Optimized optimization passes per update cycle
+        gamma=0.99,                 # Long-term horizon lookahead factor
+        gae_lambda=0.95,            # Generalized Advantage Estimation smoothing factor
+        clip_range=0.2,             # Bounded policy update step limit
+        ent_coef=0.01,              # Encourages exploration to discover paths around obstacles
+        policy_kwargs=dict(net_arch=dict(pi=[256, 256], vf=[256, 256])), # Robust hidden network layers
+        tensorboard_log="./tensorboard_logs/"
+    )
+
+    print("Starting Training Loop Pipeline (150,000 steps for trajectory tracking)...")
+    model.learn(total_timesteps=150000)
+
+    # Save policy weight vectors cleanly upon optimization completion
+    model.save("ppo_tuned_moving_manipulator")
+    print("Training finished! Saved vision-optimized checkpoints to disk.")
+
+    # Run evaluation live tracking showcase
+    eval_env = gym.make("GymManipulator-v0", render_mode="human")
+    obs, _ = eval_env.reset()
+    
+    print("Launching Trained Moving Target Tracking Evaluation Showcase Window Loop...")
+    for _ in range(1500):
+        action, _ = model.predict(obs, deterministic=True)
+        obs, reward, terminated, truncated, _ = eval_env.step(action)
+        if terminated or truncated:
+            obs, _ = eval_env.reset()
+            
+    eval_env.close()
+
+if __name__ == "__main__":
+    main()
+  
