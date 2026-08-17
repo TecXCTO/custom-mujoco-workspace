@@ -91,6 +91,35 @@ We inject a complete Domain Randomization Engine inside the environment's reset(
 
 ### File 3: scripts/train.py
 We extend the reinforcement learning training threshold to 350,000 steps to allow the model to fully learn both task phases while dealing with randomized lighting and masses.
+
+## Part 3: Deploy & Run the Production Environment
+Execute these terminal commands to start training your robust multi-stage sorting agent and update your remote repository.
+
+```
+# 1. Run the training script to begin saving metrics
+python scripts/train.py
+
+# 2. View performance logs and reward curves on the TensorBoard dashboard
+tensorboard --logdir ./tensorboard_logs/
+
+# 3. Stage and commit your final assets to GitHub
+git add assets/manipulator/arm_scene.xml gym_manipulator/envs/manipulator_env.py scripts/train.py
+git commit -m "Complete platform layout: Added domain randomization engine and multi-phase bin sorting task logic"
+git push origin main
+```
+
+Final Repository Architecture Complete!
+
+Your repository is now an advanced, production-grade robotics workspace containing:
+
+Mechanical Design (arm_scene.xml): A 3-DOF spatial arm equipped with high-stiffness Position Servos, a 2-finger parallel gripper, and a workspace sorting bin.
+
+Robustness Architecture (manipulator_env.py): A Domain Randomization Engine that changes colors, lights, and masses on every reset to prevent overfitting.
+
+Multi-Phase Problem Solving: Multi-stage task execution logic that transitions from tracking an object to placing it securely inside the bin.
+
+Monitoring and Tracking: Integrated TensorBoard metrics to monitor agent convergence and learning stability over 350,000 steps.
+
 # 8
 
 # 9
