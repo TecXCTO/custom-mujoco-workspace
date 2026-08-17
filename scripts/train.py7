@@ -1,0 +1,46 @@
+import gymnasium as gym
+from stable_baselines3 import PPO
+import gym_manipulator
+
+def main():
+    print("Initializing Domain-Randomized Bin Sorting Environment...")
+    env = gym.make("GymManipulator-v0")
+
+    print("Building PPO Workspace Architecture Network...")
+    model = PPO(
+        "MlpPolicy", 
+        env, 
+        verbose=1, 
+        learning_rate=2.5e-4,
+        n_steps=4096,
+        batch_size=128,
+        n_epochs=10,
+        gamma=0.99,
+        gae_lambda=0.95,
+        clip_range=0.2,
+        ent_coef=0.015,             # Elevated exploration factor for multi-stage sequence tasks
+        policy_kwargs=dict(net_arch=dict(pi=, vf=)),
+        tensorboard_log="./tensorboard_logs/"
+    )
+
+    print("Training Robust Model across 350,000 Randomization Iterations...")
+    model.learn(total_timesteps=350000, tb_log_name="PPO_Randomized_Bin_Sorting")
+
+    model.save("ppo_robust_bin_manipulator")
+    print("Training sequence completed successfully. Model architecture saved.")
+
+    # Evaluation
+    eval_env = gym.make("GymManipulator-v0", render_mode="human")
+    obs, _ = eval_env.reset()
+    
+    print("Running Trained Sim-to-Real Candidate Evaluation Loop...")
+    for _ in range(2000):
+        action, _ = model.predict(obs, deterministic=True)
+        obs, reward, terminated, truncated, _ = eval_env.step(action)
+        if terminated or truncated:
+            obs, _ = eval_env.reset()
+            
+    eval_env.close()
+
+if __name__ == "__main__":
+    main()
