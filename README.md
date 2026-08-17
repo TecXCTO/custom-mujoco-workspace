@@ -49,7 +49,7 @@ git status
 
 ## Part 2: Complete 3D Gripper & Position Control Source Files
 
-###File 1: assets/manipulator/arm_scene.xml
+### File 1: assets/manipulator/arm_scene.xml
 
 We update the actuators from <motor> to <position>, adding dedicated kp position stiffness attributes. We also attach a 2-finger parallel gripper (left_finger and right_finger) to the end-effector body, along with a matching prismatic actuator channel to operate them.
 
@@ -58,7 +58,7 @@ We update the actuators from <motor> to <position>, adding dedicated kp position
 We upgrade the observation space to monitor 14 state values, which now include the gripper's prismatic layout positions. The action space expands to 4 continuous control channels (Base Angle, Shoulder Angle, Elbow Angle, and Gripper Width).python
 
 
-## File 3: scripts/train.pyWe update the output layer size (policy_kwargs) to account for the larger observation space and the fourth actuator action channel.
+### File 3: scripts/train.pyWe update the output layer size (policy_kwargs) to account for the larger observation space and the fourth actuator action channel.
 
 ## Part 3: Deploy and Launch the WorkspaceRun these commands in your workspace terminal to execute your code, monitor metrics via TensorBoard, and push your completed files to GitHub.
 
