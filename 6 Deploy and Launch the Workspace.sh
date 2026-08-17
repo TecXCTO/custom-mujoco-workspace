@@ -1,3 +1,5 @@
+# Run these commands in your workspace terminal to execute your code, monitor metrics via TensorBoard, and push your completed files to GitHub.
+
 # 1. Run your updated training pipeline script
 python scripts/train.py
 
