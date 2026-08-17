@@ -1,0 +1,50 @@
+"""We update the output layer size (policy_kwargs) to account for the larger observation space and the fourth actuator action channel."""
+
+
+  import gymnasium as gym
+from stable_baselines3 import PPO
+import gym_manipulator
+
+def main():
+    print("Initializing 3-DOF Spatial Position-Controlled Gripper Arm Environment...")
+    env = gym.make("GymManipulator-v0")
+
+    print("Building PPO Framework for Spatial Picking Architecture...")
+    model = PPO(
+        "MlpPolicy", 
+        env, 
+        verbose=1, 
+        learning_rate=2.5e-4,
+        n_steps=4096,
+        batch_size=128,
+        n_epochs=10,
+        gamma=0.99,
+        gae_lambda=0.95,
+        clip_range=0.2,
+        ent_coef=0.01,
+        policy_kwargs=dict(net_arch=dict(pi=[512, 512], vf=[512, 512])),
+        tensorboard_log="./tensorboard_logs/"
+    )
+
+    print("Training Position-Controlled Gripper Model (250,000 steps)...")
+    model.learn(total_timesteps=250000, tb_log_name="PPO_3D_Gripper_Arm")
+
+    model.save("ppo_gripper_manipulator")
+    print("Training pipeline finished! Saved model checkpoints to disk.")
+
+    # Evaluation
+    eval_env = gym.make("GymManipulator-v0", render_mode="human")
+    obs, _ = eval_env.reset()
+    
+    print("Launching Trained Position-Controlled Gripper Arm Showcase Window...")
+    for _ in range(1500):
+        action, _ = model.predict(obs, deterministic=True)
+        obs, reward, terminated, truncated, _ = eval_env.step(action)
+        if terminated or truncated:
+            obs, _ = eval_env.reset()
+            
+    eval_env.close()
+
+if __name__ == "__main__":
+    main()
+  
