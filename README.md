@@ -1,10 +1,37 @@
+# Custom MuJoCo Python Workspace
+# 1.
 
-# 1 Custom MuJoCo Python Workspace
+To learn MuJoCo (Multi-Joint dynamics with Contact) from scratch, 
+we need to understand that the library splits simulation into two components: the physical structural blueprint written in MJCF (XML format), and the execution engine written in C++ with official Python bindings (import mujoco).Here is your comprehensive, step-by-step developer pipeline from basic compilation to advanced PID control loops.
+
+## Part 2: Step-by-Step MuJoCo MethodologyMake sure you have your dependencies installed locally first:
+```
+pip install mujoco numpy matplotlib
+```
+
+### Step 1: Designing the Structural Scene Blueprint (MJCF / XML)
+Before running a simulation script, you must explicitly declare the environment bodies, joint primitives, and actuators using the native MJCF XML framework.Save this structural definition inside your local folder as models/simple_pendulum.xml:
 Step-by-step robotics simulator ranging from structural MJCF files to real-time closed-loop controllers.
 
-```
+### Step 2: Basic Level — Loading, Inspecting, and Visualizing Model Data
+MuJoCo strictly isolates unchangeable constants into mjModel structures and changes in time-varying runtime states into mjData structures.Save this execution file as scripts/01_basics.py:
+Step 3: Intermediate Level — Time-Stepping, Passive Physics, and Rendering
+To progress through a simulation loop over time, use the foundational entry point function mj_step().Save this simulation script as scripts/02_simulation.py:
+
+### Step 4: Advanced Level — Closed-Loop Real-Time Control Architecture (PID Trajectory Tracking)
+Advanced tasks require updating the core input vector arrays inside data.ctrl before calling a physics processing cycle. Here is an explicit Proportional-Integral-Derivative control system designed to stabilize the pendulum directly at a vertical configuration (\(0.0\) radians).Save this file as scripts/03_advanced_pid.py:
+
+## Part 3: Finalize Your GitHub WorkspaceCommit your new code assets and push them up to your active custom online repository:
 
 ```
+# Track and save all scripts to your repository history
+git add assets/ models/ scripts/
+git commit -m "Add core structural models and basic-to-advanced custom control scripts"
+git push origin main
+
+```
+# 2 
+
 
 ```
 custom-mujoco-workspace/
@@ -28,7 +55,6 @@ custom-mujoco-workspace/
 # Project Completed!
 We have successfully built an advanced MuJoCo + Gymnasium robotics workspace from scratch, containing:A 2-DOF robotic manipulator arm structural model (MJCF).An obstacle avoidance constraint layer with terminal failure events.An integrated camera sensor framework that flattens RGB data directly into the observation space.A dynamically moving target to evaluate advanced trajectory tracking capabilities.High-performance PPO hyperparameter tuning designed to stabilize learning with large visual observation vectors.
 
-# 2 
 
 # 3 
 
