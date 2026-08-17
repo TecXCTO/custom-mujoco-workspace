@@ -70,7 +70,8 @@ This modify repository is now a complete, production-grade robotics learning pla
 
 we will now implement Domain Randomization (dynamically varying textures, ambient lighting, link masses, and surface friction values on every reset) and add a static sorting bin structure to the environment.
 
-## Part 1: Update Your Custom GitHub RepositoryRun these commands in your workspace terminal to ensure your repository tracking history is updated.
+## Part 1: Update Your Custom GitHub Repository
+Run these commands in your workspace terminal to ensure your repository tracking history is updated.
 ```
 
 # Check the status of your current branch modifications
@@ -81,7 +82,12 @@ git status
 
 ## Part 2: Complete Domain-Randomized Bin Sorting Source Files
 
-### File 1: assets/manipulator/arm_scene.xmlWe add a sorting bin target box geometry (bin_base, bin_wall) into the workspace zone so that the agent can learn to guide or place objects inside it.
+### File 1: assets/manipulator/arm_scene.xml
+We add a sorting bin target box geometry (bin_base, bin_wall) into the workspace zone so that the agent can learn to guide or place objects inside it.
+
+### File 2: gym_manipulator/envs/manipulator_env.py
+We inject a complete Domain Randomization Engine inside the environment's reset() method. On every single reset call, it slightly shifts lighting directions, modifies link masses, and alters material RGB colors. We also adapt the reward calculation matrix: once the gripper successfully moves close to the target, the target shifts focus toward the destination bin box location.
+
 
 
 # 8
