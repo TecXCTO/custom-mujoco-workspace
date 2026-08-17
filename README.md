@@ -66,7 +66,8 @@ We upgrade the observation space to monitor 14 state values, which now include t
  
 This modify repository is now a complete, production-grade robotics learning platform featuring:Structural Blueprints (arm_scene.xml): A 3-DOF robot arm with Position Servos and an integrated Symmetric 2-Finger parallel gripper.Continuous Trajectory (manipulator_env.py): A target that moves dynamically along a 3D spatial circular path.Visual Inputs: A 64 × 64 RGB camera stream that combines raw pixel data with joint states.Safe RL Architecture: Terminal penalties for obstacle collisions, proximity tracking drops, and reward bonuses for successful gripping actions.Live Dashboards (train.py): Full TensorBoard logging integrations to monitor training metrics like value loss and reward trends.
  
-# 7 To make your model robust against the "sim-to-real gap" (the difference between simulation and physical reality) and introduce structural object placement
+# 7 To make your model robust against the "sim-to-real gap" 
+(the difference between simulation and physical reality) and introduce structural object placement
 
 we will now implement Domain Randomization (dynamically varying textures, ambient lighting, link masses, and surface friction values on every reset) and add a static sorting bin structure to the environment.
 
@@ -88,8 +89,8 @@ We add a sorting bin target box geometry (bin_base, bin_wall) into the workspace
 ### File 2: gym_manipulator/envs/manipulator_env.py
 We inject a complete Domain Randomization Engine inside the environment's reset() method. On every single reset call, it slightly shifts lighting directions, modifies link masses, and alters material RGB colors. We also adapt the reward calculation matrix: once the gripper successfully moves close to the target, the target shifts focus toward the destination bin box location.
 
-
-
+### File 3: scripts/train.py
+We extend the reinforcement learning training threshold to 350,000 steps to allow the model to fully learn both task phases while dealing with randomized lighting and masses.
 # 8
 
 # 9
