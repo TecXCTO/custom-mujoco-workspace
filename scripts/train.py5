@@ -1,0 +1,46 @@
+import gymnasium as gym
+from stable_baselines3 import PPO
+import gym_manipulator
+
+def main():
+    print("Initializing Spatial 3-DOF MuJoCo Arm Environment...")
+    env = gym.make("GymManipulator-v0")
+
+    print("Building PPO Actor-Critic with TensorBoard Logging hooks...")
+    model = PPO(
+        "MlpPolicy", 
+        env, 
+        verbose=1, 
+        learning_rate=2.5e-4,
+        n_steps=4096,
+        batch_size=128,
+        n_epochs=10,
+        gamma=0.99,
+        gae_lambda=0.95,
+        clip_range=0.2,
+        ent_coef=0.01,
+        policy_kwargs=dict(net_arch=dict(pi=[256, 256], vf=[256, 256])),
+        tensorboard_log="./tensorboard_logs/"  # Activates real-time logging monitoring
+    )
+
+    print("Training 3-DOF Spatial Model (200,000 steps)...")
+    model.learn(total_timesteps=200000, tb_log_name="PPO_3D_Spatial_Arm")
+
+    model.save("ppo_spatial_manipulator")
+    print("Training complete! Model saved successfully.")
+
+    # Evaluation
+    eval_env = gym.make("GymManipulator-v0", render_mode="human")
+    obs, _ = eval_env.reset()
+    
+    print("Running Evaluation Showcase Loop...")
+    for _ in range(1200):
+        action, _ = model.predict(obs, deterministic=True)
+        obs, reward, terminated, truncated, _ = eval_env.step(action)
+        if terminated or truncated:
+            obs, _ = eval_env.reset()
+            
+    eval_env.close()
+
+if __name__ == "__main__":
+    main()
