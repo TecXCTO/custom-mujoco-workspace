@@ -1,0 +1,140 @@
+import os
+import gymnasium as gym
+from gymnasium import spaces
+import mujoco
+import numpy as np
+
+class ManipulatorEnv(gym.Env):
+    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 50}
+
+    def __init__(self, render_mode=None):
+        super().__init__()
+        
+        xml_path = os.path.join(os.path.dirname(__file__), '../../assets/manipulator/arm_scene.xml')
+        self.model = mujoco.MjModel.from_xml_path(xml_path)
+        self.data = mujoco.MjData(self.model)
+
+        self.render_mode = render_mode
+        self.viewer = None
+        
+        self.cam_width = 64
+        self.cam_height = 64
+        self.renderer = mujoco.Renderer(self.model, height=self.cam_height, width=self.cam_width)
+
+        # Action space expanded: 3 Servo Target Positions + 1 Gripper Close Command = 4 control lines
+        self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(4,), dtype=np.float32)
+
+        # Observation space tracking modification:
+        # qpos(4), qvel(4), target_pos(3), ee_pos(3) = 14 state features
+        # 14 + 12288 pixels = 12302 total input dimensions
+        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(12302,), dtype=np.float32)
+
+    def _get_obs(self):
+        qpos = self.data.qpos.copy()
+        qvel = self.data.qvel.copy()
+        ee_pos = self.data.site('ee_site').xpos.copy()
+        target_pos = self.data.body('target').xpos.copy()
+        state_features = np.concatenate([qpos, qvel, target_pos, ee_pos], dtype=np.float32)
+        
+        self.renderer.update_scene(self.data, camera="main_cam")
+        rgb_pixels = self.renderer.render()
+        flat_pixels = (rgb_pixels.flatten() / 255.0).astype(np.float32)
+        
+        return np.concatenate([state_features, flat_pixels], dtype=np.float32)
+
+    def _check_obstacle_collision(self):
+        for i in range(self.data.ncon):
+            contact = self.data.contact[i]
+            geom1_name = mujoco.mj_id2name(self.model, mujoco.mjtObj.mjOBJ_GEOM, contact.geom1)
+            geom2_name = mujoco.mj_id2name(self.model, mujoco.mjtObj.mjOBJ_GEOM, contact.geom2)
+            
+            if (geom1_name == "obs_geom" or geom2_name == "obs_geom"):
+                if geom1_name != "floor" and geom2_name != "floor":
+                    return True
+        return False
+
+    def reset(self, seed=None, options=None):
+        super().reset(seed=seed)
+        mujoco.mj_resetData(self.model, self.data)
+
+        self.target_center = np.array([0.4, 0.0, 0.4])
+        target_id = self.model.body('target').id
+        self.model.body_pos[target_id] = self.target_center.copy()
+
+        # Randomize initial positions for all 4 joint channels
+        self.data.qpos = self.np_random.uniform(-0.1, 0.1, size=4)
+        mujoco.mj_forward(self.model, self.data)
+
+        if self.render_mode == "human":
+            self.render()
+
+        return self._get_obs(), {}
+
+    def step(self, action):
+        # 1. Update target along a 3D circular path
+        t = self.data.time
+        target_id = self.model.body('target').id
+        new_target_pos = np.array([
+            self.target_center[0] + 0.1 * np.cos(2.0 * np.pi * 0.25 * t),
+            self.target_center[1] + 0.1 * np.sin(2.0 * np.pi * 0.25 * t),
+            self.target_center[2] + 0.05 * np.sin(2.0 * np.pi * 0.5 * t)
+        ])
+        self.model.body_pos[target_id] = new_target_pos
+
+        # 2. Map actions from normalized [-1, 1] range to the actuators' defined limits
+        mapped_control = np.zeros(4)
+        for i in range(4):
+            low, high = self.model.actuator_ctrlrange[i]
+            # Rescale normalized actions into actual position setpoints
+            mapped_control[i] = low + 0.5 * (action[i] + 1.0) * (high - low)
+        
+        self.data.ctrl[:] = mapped_control
+        
+        # 3. Step simulation
+        for _ in range(10):
+            mujoco.mj_step(self.model, self.data)
+
+        obs = self._get_obs()
+
+        # 4. Calculate tracking rewards
+        ee_pos = self.data.site('ee_site').xpos
+        distance_to_target = np.linalg.norm(ee_pos - new_target_pos)
+        
+        reward = -distance_to_target
+        
+        # Encourage the gripper to close tightly when near the target
+        if distance_to_target < 0.08:
+            gripper_close_effort = mapped_control[3]
+            reward += 2.0 * (gripper_close_effort / 0.03)  # Bonus reward for gripping near target
+
+        # 5. Obstacle Avoidance Shape Penalty
+        obstacle_pos = self.data.body('obstacle').xpos
+        distance_to_obstacle = np.linalg.norm(ee_pos - obstacle_pos)
+        if distance_to_obstacle < 0.15:
+            reward -= 0.02 / (distance_to_obstacle + 0.001)
+
+        # 6. Terminal Collisions
+        terminated = False
+        if self._check_obstacle_collision():
+            reward -= 50.0
+            terminated = True
+
+        truncated = self.data.time > 6.0
+
+        if self.render_mode == "human":
+            self.render()
+
+        return obs, reward, terminated, truncated, {}
+
+    def render(self):
+        if self.render_mode == "human" and self.viewer is None:
+            import mujoco.viewer
+            self.viewer = mujoco.viewer.launch_passive(self.model, self.data)
+        if self.viewer is not None:
+            self.viewer.sync()
+
+    def close(self):
+        if self.viewer is not None:
+            self.viewer.close()
+            self.viewer = None
+          
