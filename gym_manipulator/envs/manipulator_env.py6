@@ -1,3 +1,4 @@
+""" We upgrade the observation space to monitor 14 state values, which now include the gripper's prismatic layout positions. The action space expands to 4 continuous control channels (Base Angle, Shoulder Angle, Elbow Angle, and Gripper Width)."""
 import os
 import gymnasium as gym
 from gymnasium import spaces
