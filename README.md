@@ -66,7 +66,23 @@ We upgrade the observation space to monitor 14 state values, which now include t
  
 This modify repository is now a complete, production-grade robotics learning platform featuring:Structural Blueprints (arm_scene.xml): A 3-DOF robot arm with Position Servos and an integrated Symmetric 2-Finger parallel gripper.Continuous Trajectory (manipulator_env.py): A target that moves dynamically along a 3D spatial circular path.Visual Inputs: A 64 × 64 RGB camera stream that combines raw pixel data with joint states.Safe RL Architecture: Terminal penalties for obstacle collisions, proximity tracking drops, and reward bonuses for successful gripping actions.Live Dashboards (train.py): Full TensorBoard logging integrations to monitor training metrics like value loss and reward trends.
  
-# 7
+# 7 To make your model robust against the "sim-to-real gap" (the difference between simulation and physical reality) and introduce structural object placement
+
+we will now implement Domain Randomization (dynamically varying textures, ambient lighting, link masses, and surface friction values on every reset) and add a static sorting bin structure to the environment.
+
+## Part 1: Update Your Custom GitHub RepositoryRun these commands in your workspace terminal to ensure your repository tracking history is updated.
+```
+
+# Check the status of your current branch modifications
+git status
+
+# Prepare to apply the final Sim-to-Real and sorting bin architecture upgrades
+```
+
+## Part 2: Complete Domain-Randomized Bin Sorting Source Files
+
+### File 1: assets/manipulator/arm_scene.xmlWe add a sorting bin target box geometry (bin_base, bin_wall) into the workspace zone so that the agent can learn to guide or place objects inside it.
+
 
 # 8
 
