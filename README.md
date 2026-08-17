@@ -66,7 +66,7 @@ We upgrade the observation space to monitor 14 state values, which now include t
  
 This modify repository is now a complete, production-grade robotics learning platform featuring:Structural Blueprints (arm_scene.xml): A 3-DOF robot arm with Position Servos and an integrated Symmetric 2-Finger parallel gripper.Continuous Trajectory (manipulator_env.py): A target that moves dynamically along a 3D spatial circular path.Visual Inputs: A 64 × 64 RGB camera stream that combines raw pixel data with joint states.Safe RL Architecture: Terminal penalties for obstacle collisions, proximity tracking drops, and reward bonuses for successful gripping actions.Live Dashboards (train.py): Full TensorBoard logging integrations to monitor training metrics like value loss and reward trends.
  
-# 7 To make your model robust against the "sim-to-real gap" 
+# 7  To make your model robust against the "sim-to-real gap" 
 (the difference between simulation and physical reality) and introduce structural object placement
 
 we will now implement Domain Randomization (dynamically varying textures, ambient lighting, link masses, and surface friction values on every reset) and add a static sorting bin structure to the environment.
@@ -108,7 +108,7 @@ git commit -m "Complete platform layout: Added domain randomization engine and m
 git push origin main
 ```
 
-Final Repository Architecture Complete!
+# Final Repository Architecture Complete!
 
 Your repository is now an advanced, production-grade robotics workspace containing:
 
