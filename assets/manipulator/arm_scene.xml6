@@ -1,0 +1,77 @@
+<mujoco model="spatial_3d_gripper_arm">
+    <compiler coordinate="local" inertiafromgeom="true"/>
+    <option timestep="0.002" gravity="0 0 -9.81"/>
+
+    <asset>
+        <texture name="grid" type="2d" builtin="checker" rgb1=".1 .2 .3" rgb2=".2 .3 .4" width="512" height="512"/>
+        <material name="grid_mat" texture="grid" texrepeat="1 1"/>
+    </asset>
+
+    <worldbody>
+        <geom name="floor" type="plane" size="0 0 .25" material="grid_mat"/>
+        <light directional="false" diffuse=".8 .8 .8" pos="0 0 4" dir="0 0 -1"/>
+
+        <!-- Fixed Camera for Visual Observations -->
+        <camera name="main_cam" pos="0.6 -0.8 0.6" xyaxes="1 1 0 -0.5 0.5 1"/>
+
+        <!-- Target Object to Pick -->
+        <body name="target" pos="0.4 0 0.5">
+            <geom name="target_geom" type="sphere" size="0.03" rgba="1 0 0 1" mocap="true"/>
+        </body>
+
+        <!-- Spherical Obstacle to Avoid -->
+        <body name="obstacle" pos="0.3 0.1 0.35">
+            <geom name="obs_geom" type="sphere" size="0.06" rgba="0.8 0.5 0 1"/>
+        </body>
+
+        <!-- Robot Base -->
+        <body name="base" pos="0 0 0.1">
+            <joint name="joint0" type="hinge" axis="0 0 1" range="-180 180"/>
+            <geom name="base_geom" type="cylinder" size="0.1 0.1" rgba="0.5 0.5 0.5 1"/>
+            
+            <!-- Link 1 -->
+            <body name="link1" pos="0 0 0.1">
+                <joint name="joint1" type="hinge" axis="0 1 0" range="-90 90"/>
+                <geom name="link1_geom" type="capsule" fromto="0 0 0 0 0 0.3" size="0.03" rgba="0 0 1 1"/>
+                
+                <!-- Link 2 -->
+                <body name="link2" pos="0 0 0.3">
+                    <joint name="joint2" type="hinge" axis="0 1 0" range="-150 150"/>
+                    <geom name="link2_geom" type="capsule" fromto="0 0 0 0 0 0.25" size="0.025" rgba="0 1 0 1"/>
+                    
+                    <!-- End Effector Palm Header -->
+                    <body name="palm" pos="0 0 0.25">
+                        <geom name="palm_geom" type="box" size="0.02 0.05 0.01" rgba="1 1 0 1"/>
+                        <site name="ee_site" size="0.01" rgba="1 1 0 1"/>
+
+                        <!-- Left Gripper Finger -->
+                        <body name="left_finger" pos="0 -0.04 0.02">
+                            <joint name="joint_left_finger" type="prismatic" axis="0 1 0" range="0 0.03"/>
+                            <geom name="left_finger_geom" type="box" size="0.01 0.01 0.03" rgba="0.2 0.2 0.2 1"/>
+                        </body>
+
+                        <!-- Right Gripper Finger -->
+                        <body name="right_finger" pos="0 0.04 0.02">
+                            <joint name="joint_right_finger" type="prismatic" axis="0 -1 0" range="0 0.03"/>
+                            <geom name="right_finger_geom" type="box" size="0.01 0.01 0.03" rgba="0.2 0.2 0.2 1"/>
+                        </body>
+                    </body>
+                </body>
+            </body>
+        </body>
+    </worldbody>
+
+    <!-- Swapping Torque Motors with High-Stiffness Proportional Position Servo Actuators -->
+    <actuator>
+        <position name="servo0" joint="joint0" kp="200" ctrlrange="-3.14 3.14"/>
+        <position name="servo1" joint="joint1" kp="200" ctrlrange="-1.57 1.57"/>
+        <position name="servo2" joint="joint2" kp="150" ctrlrange="-2.61 2.61"/>
+        <!-- Gripper Prismatic Controller: Controls both fingers symmetrically -->
+        <position name="gripper_servo" joint="joint_left_finger" kp="100" ctrlrange="0 0.03"/>
+    </actuator>
+
+    <!-- Mirror Left Finger Movements to Right Finger automatically for symmetric execution -->
+    <equality>
+        <joint joint1="joint_left_finger" joint2="joint_right_finger" polycoef="0 1 0 0 0"/>
+    </equality>
+</mujoco>
