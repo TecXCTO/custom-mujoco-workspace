@@ -1,3 +1,4 @@
+
 # 1 Custom MuJoCo Python Workspace
 Step-by-step robotics simulator ranging from structural MJCF files to real-time closed-loop controllers.
 
@@ -112,13 +113,13 @@ git push origin main
 
 Your repository is now an advanced, production-grade robotics workspace containing:
 
-Mechanical Design (arm_scene.xml): A 3-DOF spatial arm equipped with high-stiffness Position Servos, a 2-finger parallel gripper, and a workspace sorting bin.
+1. Mechanical Design (arm_scene.xml): A 3-DOF spatial arm equipped with high-stiffness Position Servos, a 2-finger parallel gripper, and a workspace sorting bin.
 
-Robustness Architecture (manipulator_env.py): A Domain Randomization Engine that changes colors, lights, and masses on every reset to prevent overfitting.
+2. Robustness Architecture (manipulator_env.py): A Domain Randomization Engine that changes colors, lights, and masses on every reset to prevent overfitting.
 
-Multi-Phase Problem Solving: Multi-stage task execution logic that transitions from tracking an object to placing it securely inside the bin.
+3. Multi-Phase Problem Solving: Multi-stage task execution logic that transitions from tracking an object to placing it securely inside the bin.
 
-Monitoring and Tracking: Integrated TensorBoard metrics to monitor agent convergence and learning stability over 350,000 steps.
+4. Monitoring and Tracking: Integrated TensorBoard metrics to monitor agent convergence and learning stability over 350,000 steps.
 
 # 8
 
